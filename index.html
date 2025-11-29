@@ -2,30 +2,84 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Vercel Downloader</title>
+    <title>Cyber Downloader</title>
     <style>
-        body { font-family: sans-serif; padding: 20px; text-align: center; background: #f4f4f4; }
-        .box { background: white; max-width: 500px; margin: auto; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        input { width: 85%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 5px; }
-        button { padding: 12px 25px; background: #0070f3; color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
-        button:hover { background: #0051a2; }
-        #result { display: none; margin-top: 20px; border-top: 1px solid #eee; padding-top: 20px; }
-        img { width: 100%; border-radius: 8px; margin-bottom: 10px; }
-        .dl-btn { background: #28a745; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; }
+        /* CSS GAYA DARK MODE */
+        body { 
+            font-family: 'Courier New', monospace; 
+            background-color: #0d1117; 
+            color: #00ff41; 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background: #161b22;
+            padding: 30px;
+            border: 1px solid #30363d;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 255, 65, 0.2);
+            width: 90%;
+            max-width: 450px;
+            text-align: center;
+        }
+        h2 { text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 0 10px #00ff41; }
+        input { 
+            width: 100%; 
+            padding: 15px; 
+            background: #0d1117; 
+            border: 1px solid #30363d; 
+            color: white; 
+            margin-bottom: 20px; 
+            box-sizing: border-box; /* Biar rapi */
+            border-radius: 5px;
+        }
+        input:focus { outline: 2px solid #00ff41; }
+        button { 
+            width: 100%;
+            padding: 15px; 
+            background: #238636; 
+            color: white; 
+            border: none; 
+            font-weight: bold; 
+            cursor: pointer; 
+            border-radius: 5px;
+            font-size: 16px;
+            transition: 0.3s;
+        }
+        button:hover { background: #2ea043; box-shadow: 0 0 15px #2ea043; }
+        
+        /* Hasil */
+        #result { display: none; margin-top: 25px; border-top: 1px dashed #30363d; padding-top: 20px; }
+        img { width: 100%; border-radius: 5px; border: 1px solid #30363d; }
+        .dl-btn { 
+            display: block; 
+            background: white; 
+            color: black; 
+            padding: 12px; 
+            text-decoration: none; 
+            font-weight: bold; 
+            margin-top: 15px; 
+            border-radius: 5px; 
+        }
     </style>
 </head>
 <body>
-    <div class="box">
-        <h2>⚡ Full Vercel Downloader</h2>
-        <input type="text" id="link" placeholder="Paste link TikTok/IG/YouTube...">
-        <button onclick="gas()" id="btn">DOWNLOAD</button>
-        <p id="msg" style="color:red; font-size: 14px;"></p>
+
+    <div class="container">
+        <h2>⚡ Cyber Downloader</h2>
+        <p style="color: #8b949e; font-size: 12px;">System Ready. Paste Link Below.</p>
+        
+        <input type="text" id="link" placeholder="https://tiktok.com/...">
+        <button onclick="gas()" id="btn">INITIALIZE DOWNLOAD</button>
+        <p id="msg" style="color:red; font-size: 12px; margin-top: 10px;"></p>
 
         <div id="result">
-            <h3 id="title"></h3>
+            <h3 id="title" style="font-size: 14px; color: white;"></h3>
             <img id="thumb" src="">
-            <br>
-            <a id="dl_link" class="dl-btn" target="_blank">Download MP4</a>
+            <a id="dl_link" class="dl-btn" target="_blank">⬇️ SAVE VIDEO</a>
         </div>
     </div>
 
@@ -37,13 +91,12 @@
 
             if(!url) return;
 
-            btn.innerText = "Loading...";
+            btn.innerText = "PROCESSING...";
             btn.disabled = true;
             msg.innerText = "";
             document.getElementById('result').style.display = 'none';
 
             try {
-                // Perhatikan: Kita pakai jalur relatif '/api/download'
                 const req = await fetch('/api/download', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
@@ -58,13 +111,13 @@
                     document.getElementById('dl_link').href = res.url;
                     document.getElementById('result').style.display = 'block';
                 } else {
-                    msg.innerText = "Gagal: " + (res.msg || "Server sibuk/Timeout");
+                    msg.innerText = "ERROR: " + (res.msg || "System Failure");
                 }
             } catch (e) {
-                msg.innerText = "Error: Kemungkinan video terlalu besar (Timeout 10s).";
+                msg.innerText = "CRITICAL ERROR: Connection Timeout.";
             }
 
-            btn.innerText = "DOWNLOAD";
+            btn.innerText = "INITIALIZE DOWNLOAD";
             btn.disabled = false;
         }
     </script>
