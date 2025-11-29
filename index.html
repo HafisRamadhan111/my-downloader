@@ -4,7 +4,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Cyber Downloader</title>
     <style>
-        /* CSS GAYA DARK MODE */
+        /* GAYA DARK MODE */
         body { 
             font-family: 'Courier New', monospace; 
             background-color: #0d1117; 
@@ -33,7 +33,7 @@
             border: 1px solid #30363d; 
             color: white; 
             margin-bottom: 20px; 
-            box-sizing: border-box; /* Biar rapi */
+            box-sizing: border-box;
             border-radius: 5px;
         }
         input:focus { outline: 2px solid #00ff41; }
@@ -51,7 +51,6 @@
         }
         button:hover { background: #2ea043; box-shadow: 0 0 15px #2ea043; }
         
-        /* Hasil */
         #result { display: none; margin-top: 25px; border-top: 1px dashed #30363d; padding-top: 20px; }
         img { width: 100%; border-radius: 5px; border: 1px solid #30363d; }
         .dl-btn { 
@@ -69,7 +68,7 @@
 <body>
 
     <div class="container">
-        <h2>⚡ Socmed Downloader</h2>
+        <h2>⚡ Cyber Downloader</h2>
         <p style="color: #8b949e; font-size: 12px;">System Ready. Paste Link Below.</p>
         
         <input type="text" id="link" placeholder="https://tiktok.com/...">
@@ -97,6 +96,7 @@
             document.getElementById('result').style.display = 'none';
 
             try {
+                // Request ke API Backend Vercel
                 const req = await fetch('/api/download', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
@@ -111,10 +111,10 @@
                     document.getElementById('dl_link').href = res.url;
                     document.getElementById('result').style.display = 'block';
                 } else {
-                    msg.innerText = "ERROR: " + (res.msg || "System Failure");
+                    msg.innerText = "ERROR: " + (res.msg || "Link tidak valid / Private");
                 }
             } catch (e) {
-                msg.innerText = "CRITICAL ERROR: Connection Timeout.";
+                msg.innerText = "CRITICAL ERROR: Server Timeout (Video terlalu berat).";
             }
 
             btn.innerText = "INITIALIZE DOWNLOAD";
