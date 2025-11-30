@@ -71,14 +71,14 @@
         <h2>⚡ Cyber Downloader</h2>
         <p style="color: #8b949e; font-size: 12px;">System Ready. Paste Link Below.</p>
         
-        <input type="text" id="link" placeholder="https://tiktok.com/...">
+        <input type="text" id="link" placeholder="tiktok.com...">
         <button onclick="gas()" id="btn">INITIALIZE DOWNLOAD</button>
         <p id="msg" style="color:red; font-size: 12px; margin-top: 10px;"></p>
 
         <div id="result">
             <h3 id="title" style="font-size: 14px; color: white;"></h3>
             <img id="thumb" src="">
-            <a id="dl_link" class="dl-btn" target="_blank">⬇️ SAVE VIDEO</a>
+            <a id="dl_link" class="dl-btn">⬇️ SAVE VIDEO</a>
         </div>
     </div>
 
@@ -86,7 +86,8 @@
         async function gas() {
             const btn = document.getElementById('btn');
             const msg = document.getElementById('msg');
-            const url = document.getElementById('link').value;
+            const urlInput = document.getElementById('link');
+            const url = urlInput.value;
 
             if(!url) return;
 
@@ -96,8 +97,8 @@
             document.getElementById('result').style.display = 'none';
 
             try {
-                // Request ke API Backend Vercel
-                const req = await fetch('/api/download', {
+                // 1. Request INFO dari Backend Vercel API (endpoint baru)
+                const req = await fetch('/api/download_info', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ url: url })
@@ -108,13 +109,24 @@
                 if(res.status === 'success') {
                     document.getElementById('title').innerText = res.title;
                     document.getElementById('thumb').src = res.thumb;
-                    document.getElementById('dl_link').href = res.url;
+                    
+                    // 2. Buat link streaming yang menunjuk ke endpoint stream_file
+                    // Kita perlu URL-encode parameter untuk permintaan GET
+                    const streamUrl = new URL('/api/stream_file', window.location.origin);
+                    streamUrl.searchParams.append('video_url', url); // Kirim URL asli ke backend lagi
+                    streamUrl.searchParams.append('title', res.title); 
+
+                    const dlLinkElement = document.getElementById('dl_link');
+                    dlLinkElement.href = streamUrl.toString();
+                    dlLinkElement.target = "_self"; // Agar pengunduhan ditangani oleh browser
+
                     document.getElementById('result').style.display = 'block';
                 } else {
                     msg.innerText = "ERROR: " + (res.msg || "Link tidak valid / Private");
                 }
             } catch (e) {
-                msg.innerText = "CRITICAL ERROR: Server Timeout (Video terlalu berat).";
+                console.error(e);
+                msg.innerText = "CRITICAL ERROR: Server Timeout (Video terlalu berat atau kesalahan API).";
             }
 
             btn.innerText = "INITIALIZE DOWNLOAD";
