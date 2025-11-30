@@ -2,83 +2,60 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Cyber Downloader</title>
+    <title>Universal Downloader V2</title>
     <style>
-        /* GAYA DARK MODE */
         body { 
-            font-family: 'Courier New', monospace; 
-            background-color: #0d1117; 
-            color: #00ff41; 
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
+            font-family: sans-serif; 
+            background: #121212; 
+            color: white; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh; 
+            margin: 0; 
         }
-        .container {
-            background: #161b22;
-            padding: 30px;
-            border: 1px solid #30363d;
-            border-radius: 10px;
-            box-shadow: 0 0 20px rgba(0, 255, 65, 0.2);
-            width: 90%;
-            max-width: 450px;
-            text-align: center;
+        .box { 
+            background: #1e1e1e; 
+            padding: 25px; 
+            border-radius: 15px; 
+            width: 90%; 
+            max-width: 400px; 
+            text-align: center; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5); 
         }
-        h2 { text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 0 10px #00ff41; }
+        h2 { margin-top: 0; color: #bb86fc; }
         input { 
-            width: 100%; 
-            padding: 15px; 
-            background: #0d1117; 
-            border: 1px solid #30363d; 
-            color: white; 
-            margin-bottom: 20px; 
-            box-sizing: border-box;
-            border-radius: 5px;
+            width: 100%; padding: 12px; margin-bottom: 15px; 
+            border-radius: 8px; border: 1px solid #333; 
+            background: #2c2c2c; color: white; box-sizing: border-box;
         }
-        input:focus { outline: 2px solid #00ff41; }
         button { 
-            width: 100%;
-            padding: 15px; 
-            background: #238636; 
-            color: white; 
-            border: none; 
-            font-weight: bold; 
-            cursor: pointer; 
-            border-radius: 5px;
-            font-size: 16px;
-            transition: 0.3s;
+            width: 100%; padding: 12px; background: #bb86fc; 
+            color: black; font-weight: bold; border: none; 
+            border-radius: 8px; cursor: pointer; 
         }
-        button:hover { background: #2ea043; box-shadow: 0 0 15px #2ea043; }
-        
-        #result { display: none; margin-top: 25px; border-top: 1px dashed #30363d; padding-top: 20px; }
-        img { width: 100%; border-radius: 5px; border: 1px solid #30363d; }
+        button:disabled { background: #555; cursor: not-allowed; }
+        #result { display: none; margin-top: 20px; }
+        img { width: 100%; border-radius: 10px; margin-bottom: 10px; }
         .dl-btn { 
-            display: block; 
-            background: white; 
-            color: black; 
-            padding: 12px; 
-            text-decoration: none; 
-            font-weight: bold; 
-            margin-top: 15px; 
-            border-radius: 5px; 
+            display: block; background: #03dac6; color: black; 
+            padding: 10px; text-decoration: none; border-radius: 8px; font-weight: bold; 
         }
+        .error-txt { color: #cf6679; font-size: 13px; margin-top: 10px; display: none; }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <h2>⚡ Cyber Downloader</h2>
-        <p style="color: #8b949e; font-size: 12px;">System Ready. Paste Link Below.</p>
-        
-        <input type="text" id="link" placeholder="tiktok.com...">
-        <button onclick="gas()" id="btn">INITIALIZE DOWNLOAD</button>
-        <p id="msg" style="color:red; font-size: 12px; margin-top: 10px;"></p>
+    <div class="box">
+        <h2>🚀 Downloader V2</h2>
+        <input type="text" id="link" placeholder="Paste Link TikTok / YT / IG...">
+        <button onclick="gas()" id="btn">DOWNLOAD</button>
+        <p id="msg" class="error-txt"></p>
 
         <div id="result">
-            <h3 id="title" style="font-size: 14px; color: white;"></h3>
+            <h4 id="title"></h4>
             <img id="thumb" src="">
-            <a id="dl_link" class="dl-btn">⬇️ SAVE VIDEO</a>
+            <a id="dl_link" class="dl-btn" target="_blank">Download MP4</a>
         </div>
     </div>
 
@@ -86,19 +63,19 @@
         async function gas() {
             const btn = document.getElementById('btn');
             const msg = document.getElementById('msg');
-            const urlInput = document.getElementById('link');
-            const url = urlInput.value;
+            const url = document.getElementById('link').value;
+            const resBox = document.getElementById('result');
 
             if(!url) return;
 
-            btn.innerText = "PROCESSING...";
+            // Reset UI
+            btn.innerText = "Sedang Memproses...";
             btn.disabled = true;
-            msg.innerText = "";
-            document.getElementById('result').style.display = 'none';
+            msg.style.display = "none";
+            resBox.style.display = 'none';
 
             try {
-                // 1. Request INFO dari Backend Vercel API (endpoint baru)
-                const req = await fetch('/api/download_info', {
+                const req = await fetch('/api/download', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ url: url })
@@ -109,27 +86,18 @@
                 if(res.status === 'success') {
                     document.getElementById('title').innerText = res.title;
                     document.getElementById('thumb').src = res.thumb;
-                    
-                    // 2. Buat link streaming yang menunjuk ke endpoint stream_file
-                    // Kita perlu URL-encode parameter untuk permintaan GET
-                    const streamUrl = new URL('/api/stream_file', window.location.origin);
-                    streamUrl.searchParams.append('video_url', url); // Kirim URL asli ke backend lagi
-                    streamUrl.searchParams.append('title', res.title); 
-
-                    const dlLinkElement = document.getElementById('dl_link');
-                    dlLinkElement.href = streamUrl.toString();
-                    dlLinkElement.target = "_self"; // Agar pengunduhan ditangani oleh browser
-
-                    document.getElementById('result').style.display = 'block';
+                    document.getElementById('dl_link').href = res.url;
+                    resBox.style.display = 'block';
                 } else {
-                    msg.innerText = "ERROR: " + (res.msg || "Link tidak valid / Private");
+                    msg.innerText = res.msg;
+                    msg.style.display = "block";
                 }
             } catch (e) {
-                console.error(e);
-                msg.innerText = "CRITICAL ERROR: Server Timeout (Video terlalu berat atau kesalahan API).";
+                msg.innerText = "Error Jaringan / Timeout (Coba lagi)";
+                msg.style.display = "block";
             }
 
-            btn.innerText = "INITIALIZE DOWNLOAD";
+            btn.innerText = "DOWNLOAD";
             btn.disabled = false;
         }
     </script>
