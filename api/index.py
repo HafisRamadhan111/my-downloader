@@ -1,13 +1,10 @@
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse, JSONResponse
 from pydantic import BaseModel
 import yt_dlp
-import requests
 
 app = FastAPI()
 
-# Izinkan akses
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -18,65 +15,55 @@ app.add_middleware(
 class Item(BaseModel):
     url: str
 
-@app.post("/api/download_info")
-def download_info(item: Item):
-    """Endpoint untuk mengambil metadata dan URL streaming aktual."""
+@app.post("/api/download")
+def download_video(item: Item):
     try:
-        # Gunakan opsi format terbaik, dan JANGAN SIMULATE di sini
+        # --- KONFIGURASI ANTI BLOKIR & TANPA FFMPEG ---
         ydl_opts = {
-            'format': 'best[ext=mp4]/best', # Opsi yang lebih sederhana untuk kecepatan
+            # PENTING: Minta format mp4 yang audio+video sudah gabung.
+            # Biasanya max 720p, tapi ini satu-satunya cara agar jalan di Vercel tanpa FFmpeg.
+            'format': 'best[ext=mp4]/best', 
+            
             'quiet': True,
             'no_warnings': True,
             'noplaylist': True,
+            
+            # --- PENYAMARAN (Agar dikira HP iPhone) ---
+            'user_agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15E148 Safari/604.1',
+            'referer': 'https://www.google.com/',
+            
+            # Paksa ekstrak info tanpa download file fisik ke server
+            'extract_flat': False, 
         }
+
+        # Khusus TikTok, kadang butuh penanganan ekstra
+        if "tiktok.com" in item.url:
+             # Coba paksa mobile version
+             pass 
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(item.url, download=False)
             
-            # Dapatkan URL streaming yang sebenarnya
-            actual_stream_url = info.get('url')
+            # Logika pencarian URL terbaik
+            download_url = info.get('url')
+            
+            # Fallback (Jaga-jaga jika URL utama kosong)
+            if not download_url:
+                # Coba cari di formats
+                formats = info.get('formats', [])
+                for f in formats:
+                    if f.get('ext') == 'mp4' and f.get('acodec') != 'none':
+                        download_url = f.get('url')
+                        break
 
-            return JSONResponse(content={
+            return {
                 "status": "success",
-                "title": info.get('title', 'Video Tanpa Judul'),
+                "title": info.get('title', 'Video Found'),
                 "thumb": info.get('thumbnail'),
-                "stream_url": actual_stream_url, # <-- KEMBALIKAN URL ASLI DI SINI
+                "url": download_url,
                 "platform": info.get('extractor_key')
-            })
+            }
 
     except Exception as e:
-        print(f"Error di endpoint info: {e}")
-        return JSONResponse(status_code=400, content={"status": "error", "msg": str(e)})
-
-
-@app.get("/api/stream_file")
-async def stream_file(video_url: str, title: str = "video"):
-    """Endpoint untuk mengalirkan file video melalui backend."""
-    try:
-        # Kita SUDAH punya actual_stream_url dari frontend. 
-        # Kita TIDAK PERLU menjalankan yt-dlp lagi di sini. Ini menghemat waktu eksekusi Vercel.
-        actual_stream_url = video_url 
-
-        # Gunakan requests untuk streaming file eksternal
-        req = requests.get(actual_stream_url, stream=True, allow_redirects=True)
-        req.raise_for_status()
-
-        # Fungsi generator untuk menghasilkan potongan (chunks) file
-        def file_iterator():
-            for chunk in req.iter_content(chunk_size=8192):
-                yield chunk
-        
-        content_type = req.headers.get('Content-Type')
-        
-        # Atur Content-Disposition untuk memaksa pengunduhan dengan nama file tertentu
-        filename = f"{title}.mp4" 
-        headers = {
-            'Content-Disposition': f'attachment; filename="{filename}"',
-            'Content-Type': content_type or 'video/mp4'
-        }
-
-        return StreamingResponse(file_iterator(), headers=headers)
-
-    except Exception as e:
-        print(f"Error di endpoint stream: {e}")
-        raise HTTPException(status_code=500, detail="Tidak dapat melakukan streaming file. Video mungkin terlalu besar atau link tidak valid.")
+        # Tampilkan error detail untuk diagnosa
+        return {"status": "error", "msg": f"Gagal: {str(e)}"}
